@@ -1,0 +1,24 @@
+{
+  "name": "memoir-onboarding",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^16.3.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.1",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.8.3"
+  }
+}

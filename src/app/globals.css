@@ -1,0 +1,321 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------
+   Design tokens, taken from the Stitch design's Tailwind config so the
+   built flow and the design file stay in step. Everything downstream
+   resolves through these names.
+   --------------------------------------------------------------------- */
+@theme {
+  --color-background: #fcf9f4;
+  --color-on-background: #1c1c19;
+  --color-surface: #fcf9f4;
+  --color-surface-bright: #fcf9f4;
+  --color-surface-dim: #dcdad5;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f6f3ee;
+  --color-surface-container: #f0ede9;
+  --color-surface-container-high: #ebe8e3;
+  --color-surface-container-highest: #e5e2dd;
+  --color-surface-variant: #e5e2dd;
+  --color-on-surface: #1c1c19;
+  --color-on-surface-variant: #55433e;
+
+  --color-primary: #95432e;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #b45b44;
+  --color-on-primary-container: #fffbff;
+  --color-primary-fixed: #ffdbd2;
+
+  --color-secondary: #5d5c74;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #e2e0fc;
+
+  --color-tertiary: #006859;
+  --color-outline: #88726d;
+  --color-outline-variant: #dbc1bb;
+  --color-error: #ba1a1a;
+  --color-inverse-surface: #31302d;
+
+  --font-display: var(--font-playfair), "Iowan Old Style", Georgia, ui-serif,
+    serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+
+  --spacing-unit: 8px;
+  --spacing-element-gap: 24px;
+  --spacing-section-gap: 80px;
+}
+
+/* The paper grain from the design: an inline SVG turbulence at 5%. */
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-body);
+  background-image: url('data:image/svg+xml;utf8,<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.05"/></svg>');
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------------------------------------------------------------------
+   Type scale
+   --------------------------------------------------------------------- */
+@utility display-lg {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+@media (min-width: 768px) {
+  .display-lg {
+    font-size: 48px;
+    line-height: 56px;
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility headline-md {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 600;
+}
+
+@utility headline-sm {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+@utility body-lg {
+  font-size: 20px;
+  line-height: 32px;
+  font-weight: 400;
+}
+
+@utility body-md {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+@utility label-caps {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------
+   Motion. Short and quiet — this flow asks about someone who has died.
+   --------------------------------------------------------------------- */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.animate-fade {
+  animation: fade 0.7s ease both;
+}
+
+.animate-settle {
+  animation: settle 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.delay-1 {
+  animation-delay: 0.12s;
+}
+.delay-2 {
+  animation-delay: 0.24s;
+}
+.delay-3 {
+  animation-delay: 0.36s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Secondary content that appears only when the viewport has height to spare,
+   so a short screen still fits in one view instead of scrolling. */
+.tall-only,
+.tall-only-block {
+  display: none;
+}
+
+/* Only where it fits on one line and the height is going spare. */
+@media (min-height: 900px) and (min-width: 640px) {
+  .tall-only {
+    display: grid;
+  }
+}
+
+@media (min-height: 880px) {
+  .tall-only-block {
+    display: block;
+  }
+}
+
+/* Short viewports — a laptop with a 720px screen, a small phone. The type
+   scale steps down so a screen still holds one whole question. */
+@media (max-height: 740px) {
+  .display-lg {
+    font-size: 28px;
+    line-height: 34px;
+  }
+
+  .headline-md {
+    font-size: 26px;
+    line-height: 32px;
+  }
+
+  .body-lg {
+    font-size: 17px;
+    line-height: 26px;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Primitives from the design
+   --------------------------------------------------------------------- */
+
+/* The centred, underlined field used for the name. */
+.ghost-field {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-outline-variant) 45%, transparent);
+  outline: none;
+  padding: 8px 0;
+  transition: border-color 0.3s ease;
+}
+
+.ghost-field:focus {
+  border-bottom-color: var(--color-primary);
+}
+
+.ghost-field::placeholder {
+  color: color-mix(in srgb, var(--color-outline-variant) 70%, transparent);
+}
+
+/* Boxed fields on the account screen. */
+.field {
+  width: 100%;
+  background: var(--color-surface-container-lowest);
+  border: 0;
+  border-bottom: 1px solid var(--color-outline-variant);
+  border-radius: 2px;
+  padding: 14px 16px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field::placeholder {
+  color: var(--color-outline);
+  opacity: 0.75;
+}
+
+.field:focus {
+  border-bottom-color: var(--color-primary);
+  box-shadow: 0 1px 0 0 var(--color-primary);
+}
+
+/* Selectable cards: relationship, and still-with-us. */
+.choice-card {
+  width: 100%;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-surface-container-lowest) 55%, transparent);
+  padding: 20px 16px;
+  text-align: center;
+  transition: border-color 0.2s ease, background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.choice-card:hover {
+  border-color: var(--color-primary-container);
+  transform: translateY(-1px);
+}
+
+.choice-card[data-selected="true"] {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
+}
+
+/* Primary action. Radius 12px, matching the design's `full` token. */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  padding: 16px 32px;
+  transition: background-color 0.3s ease, opacity 0.3s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-container);
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-surface-container-lowest);
+  padding: 15px 24px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-ghost:hover {
+  border-color: var(--color-primary-container);
+}
