@@ -147,12 +147,16 @@ export default function WelcomePage() {
         </details>
 
         <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-outline-variant/50 pt-8">
-          <span className="label-caps text-on-surface-variant/70">
-            The console arrives with the next feature
-          </span>
+          <Link
+            href="/dashboard"
+            className="btn-primary label-caps flex items-center gap-2"
+          >
+            <span>Open {first}&apos;s dashboard</span>
+            <span aria-hidden>→</span>
+          </Link>
           <Link
             href="/"
-            className="label-caps text-primary underline underline-offset-4"
+            className="label-caps text-on-surface-variant hover:text-primary underline underline-offset-4"
           >
             Back to the start
           </Link>

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signIn } from "@/app/actions";
 import { ArrowRight, Wordmark } from "@/components/Wordmark";
 
@@ -12,6 +13,7 @@ import { ArrowRight, Wordmark } from "@/components/Wordmark";
  * and everything interesting about the flow happens before an account exists.
  */
 export default function SignInPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -28,6 +30,7 @@ export default function SignInPage() {
         return;
       }
       setSignedIn(true);
+      router.push("/dashboard");
     });
   };
 
@@ -45,10 +48,12 @@ export default function SignInPage() {
           </p>
 
           {signedIn ? (
-            <p className="body-md mt-10 rounded-[12px] border border-outline-variant/60 bg-surface-container-lowest/60 p-6 text-on-surface-variant">
-              Signed in. The console arrives with the next feature — for now,
-              there is nowhere to send you.
-            </p>
+            <div className="mt-10 rounded-[12px] border border-outline-variant/60 bg-surface-container-lowest/60 p-6 text-on-surface-variant">
+              <p className="body-md">Signed in. Opening your dashboard…</p>
+              <Link href="/dashboard" className="btn-primary label-caps mt-4 inline-block">
+                Enter your dashboard →
+              </Link>
+            </div>
           ) : (
             <form onSubmit={submit} className="mt-10 space-y-6 text-left" noValidate>
               <div>
