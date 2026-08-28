@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import uuid
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -10,9 +11,19 @@ from sqlalchemy.orm import Session
 from ..auth import OwnerContext, get_current_owner
 from ..database import get_db
 from ..models import MediaAsset, Memoir, Memory, MemoryMedia, MemoryStatus
-from ..schemas import AttachMediaRequest, MemoryCreateRequest, MemoryListResponse, MemoryPatchRequest, MemoryResponse, MediaItemResponse
+from ..schemas import (
+    AttachMediaRequest,
+    MediaCompleteRequest,
+    MediaItemResponse,
+    MediaPresignRequest,
+    MediaPresignResponse,
+    MemoryCreateRequest,
+    MemoryListResponse,
+    MemoryPatchRequest,
+    MemoryResponse,
+)
 
-router = APIRouter(prefix="/memoirs/{memoir_id}/memories", tags=["memories"])
+router = APIRouter(prefix="/memoirs/{memoir_id}", tags=["memories"])
 
 
 def _get_owned_memoir_or_404(db: Session, memoir_id: str, owner: OwnerContext) -> None:
@@ -82,7 +93,7 @@ def _to_response(db: Session, memory: Memory) -> MemoryResponse:
     )
 
 
-@router.post("", response_model=MemoryResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/memories", response_model=MemoryResponse, status_code=status.HTTP_201_CREATED)
 def create_memory(
     memoir_id: UUID,
     payload: MemoryCreateRequest,
@@ -103,7 +114,7 @@ def create_memory(
     return _to_response(db, memory)
 
 
-@router.patch("/{memory_id}", response_model=MemoryResponse)
+@router.patch("/memories/{memory_id}", response_model=MemoryResponse)
 def patch_memory(
     memoir_id: UUID,
     memory_id: UUID,
@@ -131,7 +142,7 @@ def patch_memory(
     return _to_response(db, memory)
 
 
-@router.post("/{memory_id}/submit", response_model=MemoryResponse)
+@router.post("/memories/{memory_id}/submit", response_model=MemoryResponse)
 def submit_memory(
     memoir_id: UUID,
     memory_id: UUID,
@@ -164,7 +175,7 @@ def submit_memory(
     return _to_response(db, memory)
 
 
-@router.get("", response_model=MemoryListResponse)
+@router.get("/memories", response_model=MemoryListResponse)
 def list_memories(
     memoir_id: UUID,
     db: Session = Depends(get_db),
@@ -181,7 +192,7 @@ def list_memories(
     return MemoryListResponse(items=[_to_response(db, memory) for memory in memories])
 
 
-@router.get("/{memory_id}", response_model=MemoryResponse)
+@router.get("/memories/{memory_id}", response_model=MemoryResponse)
 def get_memory(
     memoir_id: UUID,
     memory_id: UUID,
@@ -193,7 +204,7 @@ def get_memory(
     return _to_response(db, memory)
 
 
-@router.post("/{memory_id}/media", response_model=MemoryResponse)
+@router.post("/memories/{memory_id}/media", response_model=MemoryResponse)
 def attach_media(
     memoir_id: UUID,
     memory_id: UUID,
@@ -243,7 +254,7 @@ def attach_media(
     return _to_response(db, memory)
 
 
-@router.delete("/{memory_id}/media/{media_asset_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/memories/{memory_id}/media/{media_asset_id}", status_code=status.HTTP_204_NO_CONTENT)
 def detach_media(
     memoir_id: UUID,
     memory_id: UUID,
@@ -267,7 +278,7 @@ def detach_media(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.delete("/{memory_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/memories/{memory_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_memory(
     memoir_id: UUID,
     memory_id: UUID,
@@ -287,3 +298,71 @@ def delete_memory(
     )
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/media/presign", response_model=MediaPresignResponse, status_code=status.HTTP_201_CREATED)
+def presign_media(
+    memoir_id: UUID,
+    payload: MediaPresignRequest,
+    db: Session = Depends(get_db),
+    owner: OwnerContext = Depends(get_current_owner),
+) -> MediaPresignResponse:
+    _get_owned_memoir_or_404(db, str(memoir_id), owner)
+
+    asset_id = str(uuid.uuid4())
+    safe_filename = payload.filename.replace(" ", "_").replace("/", "_")
+    storage_key = f"memoirs/{memoir_id}/{payload.kind}/{asset_id}_{safe_filename}"
+
+    asset = MediaAsset(
+        id=asset_id,
+        memoir_id=str(memoir_id),
+        kind=payload.kind,
+        storage_key=storage_key,
+        caption=payload.caption,
+    )
+    db.add(asset)
+    db.commit()
+    db.refresh(asset)
+
+    # In production Supabase, this would be supabase.storage.from_('media').create_signed_upload_url(storage_key)
+    # The direct upload URL goes directly to object storage endpoint.
+    upload_url = f"/api/storage/upload/{asset_id}"
+
+    return MediaPresignResponse(
+        media_asset_id=UUID(asset_id),
+        upload_url=upload_url,
+        storage_key=storage_key,
+        upload_method="PUT",
+        headers={"Content-Type": payload.mime_type},
+    )
+
+
+@router.post("/media/complete", response_model=MediaItemResponse)
+def complete_media(
+    memoir_id: UUID,
+    payload: MediaCompleteRequest,
+    db: Session = Depends(get_db),
+    owner: OwnerContext = Depends(get_current_owner),
+) -> MediaItemResponse:
+    _get_owned_memoir_or_404(db, str(memoir_id), owner)
+
+    asset = db.execute(
+        select(MediaAsset).where(
+            and_(MediaAsset.id == str(payload.media_asset_id), MediaAsset.memoir_id == str(memoir_id))
+        )
+    ).scalar_one_or_none()
+
+    if asset is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media asset not found")
+
+    if payload.caption is not None:
+        asset.caption = payload.caption
+    db.commit()
+    db.refresh(asset)
+
+    return MediaItemResponse(
+        id=UUID(asset.id),
+        kind=asset.kind,
+        caption=asset.caption,
+        playback_ref=asset.storage_key,
+    )
